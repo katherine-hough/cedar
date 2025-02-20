@@ -68,7 +68,7 @@ runs:
       run: |
         mkdir -p ./pr
         echo ${{ github.event.number }} > ./pr/NR
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v4
       with:
         name: pr
         path: pr/
