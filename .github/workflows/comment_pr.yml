@@ -7,6 +7,15 @@ on:
       - completed
 
 jobs:
+  printJob:    
+      name: Print event
+      runs-on: ubuntu-latest
+      steps:
+      - name: Dump GitHub context
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: |
+          echo "$GITHUB_CONTEXT"
   upload:
     runs-on: ubuntu-latest
     if: >
@@ -14,19 +23,11 @@ jobs:
       github.event.workflow_run.conclusion == 'success'
     steps:
       - uses: actions/checkout@v4
-      - name: Download summary
+      - name: Download archives
         shell: bash
-        run: gh run download $RUN_ID -n $NAME
+        run: gh run download $RUN_ID
         env:
           RUN_ID: ${{github.event.workflow_run.id }}
-          NAME: "coverage_summary"
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Download result
-        shell: bash
-        run: gh run download $RUN_ID -n $NAME
-        env:
-          RUN_ID: ${{github.event.workflow_run.id }}
-          NAME: "coverage_result"
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: 'Comment on PR'
         uses: actions/github-script@v3
@@ -44,7 +45,6 @@ jobs:
       - name: Set status
         shell: bash
         run: echo "hello"
-      - run: echo  ${{ github.event.workflow_run.url }}
       - name: Add comment to PR
         shell: bash
         run: gh pr comment $PR --body-file markdown.md
