@@ -9,8 +9,11 @@ on:
 jobs:
   upload:
     runs-on: ubuntu-latest
-    if: github.event.workflow_run.event == 'pull_request'
+    if: >
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.conclusion == 'success'
     steps:
+      - uses: actions/checkout@v4
       - name: Download artifact
         shell: bash
         run: gh run download $RUN_ID -n $NAME
