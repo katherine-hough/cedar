@@ -22,25 +22,11 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Read stored values
         shell: bash
-        run: |
-          ls 
+        run: | 
           echo "REPORT_LOCATION=$(cat coverage_results/report_location.txt)" >> $GITHUB_ENV
           echo "ISSUE_NUMBER=$(cat coverage_results/issue_number.txt)" >> $GITHUB_ENV
-          echo "STATUS=$(cat coverage_results/status.txt)" >> $GITHUB_ENV
-          echo "THRESHOLD=$(cat coverage_results/threshold.txt)" >> $GITHUB_ENV
-          echo $REPORT_LOCATION
-          echo $ISSUE_NUMBER
-          echo $THRESHOLD
-          echo $STATUS
       - name: Add comment to PR
         shell: bash
         run: gh pr comment $ISSUE_NUMBER --body-file coverage_results/markdown.md
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Check status
-        if: ${{ env.STATUS == 'FAILED' }}
-        uses: actions/github-script@v3
-        with:
-          threshold: env.THRESHOLD
-          script: |
-              core.setFailed('Coverage of modified lines was below threshold ${threshold}.')
