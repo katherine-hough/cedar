@@ -7,15 +7,6 @@ on:
       - completed
 
 jobs:
-  printJob:    
-      name: Print event
-      runs-on: ubuntu-latest
-      steps:
-      - name: Dump GitHub context
-        env:
-          GITHUB_CONTEXT: ${{ toJson(github) }}
-        run: |
-          echo "$GITHUB_CONTEXT"
   upload:
     runs-on: ubuntu-latest
     if: >
@@ -23,37 +14,33 @@ jobs:
       github.event.workflow_run.conclusion == 'success'
     steps:
       - uses: actions/checkout@v4
-      - name: Download archives
+      - name: Download artifacts
         shell: bash
         run: gh run download $RUN_ID
         env:
           RUN_ID: ${{github.event.workflow_run.id }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: 'Comment on PR'
-        uses: actions/github-script@v3
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            var fs = require('fs');
-            var issue_number = Number(fs.readFileSync('./NR'));
-            await github.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: issue_number,
-              body: 'Everything is OK. Thank you for the PR!'
-            });
-      - name: Set status
+      - name: Read stored values
         shell: bash
-        run: echo "hello"
+        run: |
+          ls 
+          echo "REPORT_LOCATION=$(cat coverage_results/report_location.txt)" >> $GITHUB_ENV
+          echo "ISSUE_NUMBER=$(cat coverage_results/issue_number.txt)" >> $GITHUB_ENV
+          echo "STATUS=$(cat coverage_results/status.txt)" >> $GITHUB_ENV
+          echo "THRESHOLD=$(cat coverage_results/threshold.txt)" >> $GITHUB_ENV
+          echo $REPORT_LOCATION
+          echo $ISSUE_NUMBER
+          echo $THRESHOLD
+          echo $STATUS
       - name: Add comment to PR
         shell: bash
-        run: gh pr comment $PR --body-file markdown.md
+        run: gh pr comment $ISSUE_NUMBER --body-file coverage_results/markdown.md
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR: ${{ github.event.workflow_run.url }}
-      - name: Report failures
+      - name: Check status
         if: ${{ env.STATUS == 'FAILED' }}
         uses: actions/github-script@v3
         with:
+          threshold: env.THRESHOLD
           script: |
-              core.setFailed('Coverage of modified lines was below threshold.')
+              core.setFailed('Coverage of modified lines was below threshold ${threshold}.')
