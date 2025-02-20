@@ -41,35 +41,21 @@ runs:
         name: coverage_report
         path: target/coverage/html/
         retention-days: 30
-    - name: Upload markdown summary
-      uses: actions/upload-artifact@v4
-      with:
-        name: coverage_summary
-        path: target/coverage/markdown.md
-        retention-days: 2
-    - name: Write coverage result
+    - name: Collect results
       shell: bash
       env:
-        THRESHOLD: ${{ inputs.threshold }}
-      run: echo FAILED >> target/coverage/result.txt
-    - name: Upload coverage result
+        ISSUE_NUMBER: ${{ github.event.number }}
+        REPORT_LOCATION: ${{ steps.upload-artifact.outputs.artifact-url }}
+      run: |
+        mkdir -p target/coverage/results
+        echo "FAILED" >> target/coverage/results/status.txt
+        mv target/coverage/markdown.md target/coverage/results/
+        echo $ISSUE_NUMBER >> target/coverage/results/issue_number.txt
+        echo $REPORT_LOCATION >> target/coverage/results/report_location.txt
+        echo $THRESHOLD >> target/coverage/results/threshold.txt
+    - name: Upload results
       uses: actions/upload-artifact@v4
       with:
-        name: coverage_result
-        path: target/coverage/result.txt
+        name: coverage_results
+        path: target/coverage/results/
         retention-days: 1
-    - name: Print report location
-      shell: bash
-      run: |
-        echo 'Full coverage report available at:  ${{ steps.upload-artifact.outputs.artifact-url }}'
-    - name: Save PR number
-      shell: bash
-      env:
-        NUMBER: ${{ github.event.number }}
-      run: |
-        mkdir -p ./pr
-        echo $NUMBER > ./pr/NR
-    - uses: actions/upload-artifact@v4
-      with:
-        name: pr
-        path: pr/
