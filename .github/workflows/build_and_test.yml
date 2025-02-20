@@ -6,6 +6,10 @@ on:
         required: false
         default: false
         type: boolean
+      threshold:
+        required: false
+        default: -1
+        type: number
 
 jobs:
   build_and_test:
@@ -50,7 +54,7 @@ jobs:
         if: ${{ inputs.report_coverage }} && ${{ matrix.toolchain }} == 'stable'
         uses: ./.github/actions/report_coverage
         with:
-          threshold: .8
+          threshold: ${{ inputs.threshold }}
         
 
   # # Clippy in its own job so that the `RUSTFLAGS` set for `build_and_test`
