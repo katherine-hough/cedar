@@ -19,28 +19,25 @@ jobs:
         shell: bash
         run: |
           jobs=$(gh run view $RUN_ID --json jobs)
-          job_status=$(jq '.[] | map(select(.name=="build_and_test / Build and Test (stable)"))[0] | .status' <<< "$jobs")
-          echo "$jobs"
-          echo "$job_status"
-          echo "STATUS=$job_status"  >> $GITHUB_ENV
+          job_status=$(jq --raw-output '.[] | map(select(.name=="build_and_test / Build and Test (stable)"))[0] | .status' <<< "$jobs")
+          echo "STATUS=$job_status" >> $GITHUB_ENV
         env:
               RUN_ID: ${{github.event.workflow_run.id }}
               GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - run: echo $STATUS
       - name: Download artifacts
-        if: ${{env.STATUS == 'completed'}}
+        if: ${{ env.STATUS == 'completed' }}
         shell: bash
         run: gh run download $RUN_ID
         env:
           RUN_ID: ${{github.event.workflow_run.id }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Read stored values
-        if: ${{env.STATUS == 'completed'}}
+        if: ${{ env.STATUS == 'completed' }}
         shell: bash
         run: |
           echo "ISSUE_NUMBER=$(cat coverage_results/issue_number.txt)" >> $GITHUB_ENV
       - name: Add comment to PR
-        if: ${{env.STATUS == 'completed'}}
+        if: ${{ env.STATUS == 'completed' }}
         shell: bash
         run: gh pr comment $ISSUE_NUMBER --body-file coverage_results/markdown.md
         env:
