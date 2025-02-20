@@ -15,18 +15,27 @@ jobs:
       github.event.workflow_run.conclusion == 'failure')
     steps:
       - uses: actions/checkout@v4
+      - name: Check build_and_test status
+        shell: bash
+        run: echo "STATUS=$(gh run view $RUN_ID --json jobs --jq $FILTER)"  >> $GITHUB_ENV
+        env:
+              RUN_ID: ${{github.event.workflow_run.id }}
+              GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              FILTER: '.[] | map(select(.name=="build_and_test / Build and Test (stable)"))[0] | .status'
       - name: Download artifacts
+        if: ${{env.STATUS == 'completed'}}
         shell: bash
         run: gh run download $RUN_ID
         env:
           RUN_ID: ${{github.event.workflow_run.id }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Read stored values
+        if: ${{env.STATUS == 'completed'}}
         shell: bash
         run: |
-          echo "REPORT_LOCATION=$(cat coverage_results/report_location.txt)" >> $GITHUB_ENV
           echo "ISSUE_NUMBER=$(cat coverage_results/issue_number.txt)" >> $GITHUB_ENV
       - name: Add comment to PR
+        if: ${{env.STATUS == 'completed'}}
         shell: bash
         run: gh pr comment $ISSUE_NUMBER --body-file coverage_results/markdown.md
         env:

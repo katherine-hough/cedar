@@ -30,7 +30,7 @@ jobs:
         with:
           threshold: ${{ env.THRESHOLD }}
           script: |
-              core.setFailed('Coverage of modified lines was below the required threshold (0.8).')
+              core.setFailed('Coverage of modified lines was below the required threshold 0.8')
 
   # cargo_semver_checks:
   #   name: Cargo SemVer Checks
