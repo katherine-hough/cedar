@@ -14,12 +14,19 @@ jobs:
       github.event.workflow_run.conclusion == 'success'
     steps:
       - uses: actions/checkout@v4
-      - name: Download artifact
+      - name: Download summary
         shell: bash
         run: gh run download $RUN_ID -n $NAME
         env:
           RUN_ID: ${{github.event.workflow_run.id }}
           NAME: "coverage_summary"
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Download result
+        shell: bash
+        run: gh run download $RUN_ID -n $NAME
+        env:
+          RUN_ID: ${{github.event.workflow_run.id }}
+          NAME: "coverage_result"
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - run: echo  ${{ github.event.workflow_run.html_url }}
       - name: Add comment to PR
@@ -28,3 +35,9 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR: ${{ github.event.workflow_run.html_url }}
+      - name: Report threshold 
+        if: ${{ 0.7 < 0.8 }}
+        uses: actions/github-script@v3
+        with:
+          script: |
+              core.setFailed('Coverage of modified lines was below threshold.')

@@ -47,12 +47,18 @@ runs:
         name: coverage_summary
         path: target/coverage/markdown.md
         retention-days: 2
+    - name: Write coverage result
+      shell: bash
+      env:
+        THRESHOLD: ${{ inputs.threshold }}
+      run: echo PASSED >> target/coverage/result.txt
+    - name: Upload coverage result
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage_result
+        path: target/coverage/result.txt
+        retention-days: 2
     - name: Print report location
       shell: bash
       run: |
         echo 'Full coverage report available at:  ${{ steps.upload-artifact.outputs.artifact-url }}'
-    - name: Check threshold
-      if: ${{ inputs.threshold != '-1' }}
-      shell: bash
-      run: |
-        echo 'TODO: Checking coverage theshold ${{ inputs.threshold }}'
