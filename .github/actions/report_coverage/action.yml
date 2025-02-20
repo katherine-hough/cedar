@@ -44,6 +44,7 @@ runs:
     - name: Collect results
       shell: bash
       env:
+        THRESHOLD: ${{ inputs.threshold }}
         ISSUE_NUMBER: ${{ github.event.number }}
         REPORT_LOCATION: ${{ steps.upload-artifact.outputs.artifact-url }}
       run: |
