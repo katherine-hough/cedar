@@ -17,11 +17,16 @@ jobs:
       - uses: actions/checkout@v4
       - name: Check build_and_test status
         shell: bash
-        run: echo "STATUS=$(gh run view $RUN_ID --json jobs --jq $FILTER)"  >> $GITHUB_ENV
+        run: |
+          jobs=$(gh run view $RUN_ID --json jobs)
+          job_status=$(jq '.[] | map(select(.name=="build_and_test / Build and Test (stable)"))[0] | .status' <<< "$jobs")
+          echo "$jobs"
+          echo "$job_status"
+          echo "STATUS=$job_status"  >> $GITHUB_ENV
         env:
               RUN_ID: ${{github.event.workflow_run.id }}
               GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-              FILTER: '.[] | map(select(.name=="build_and_test / Build and Test (stable)"))[0] | .status'
+      - run: echo $STATUS
       - name: Download artifacts
         if: ${{env.STATUS == 'completed'}}
         shell: bash
