@@ -11,7 +11,8 @@ jobs:
     runs-on: ubuntu-latest
     if: >
       github.event.workflow_run.event == 'pull_request' &&
-      github.event.workflow_run.conclusion == 'success'
+      (github.event.workflow_run.conclusion == 'success' ||
+      github.event.workflow_run.conclusion == 'failure')
     steps:
       - uses: actions/checkout@v4
       - name: Download artifacts
@@ -22,7 +23,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Read stored values
         shell: bash
-        run: | 
+        run: |
           echo "REPORT_LOCATION=$(cat coverage_results/report_location.txt)" >> $GITHUB_ENV
           echo "ISSUE_NUMBER=$(cat coverage_results/issue_number.txt)" >> $GITHUB_ENV
       - name: Add comment to PR

@@ -21,19 +21,16 @@ jobs:
         uses: actions/download-artifact@v4
         with: 
           name: coverage_results
-      - run: ls
-      - name: Read stored values
+      - name: Read status
         shell: bash
-        run: | 
-          echo "STATUS=$(cat coverage_results/status.txt)" >> $GITHUB_ENV
-          echo "THRESHOLD=$(cat coverage_results/threshold.txt)" >> $GITHUB_ENV
+        run: echo "STATUS=$(cat status.txt)" >> $GITHUB_ENV
       - name: Check status
         if: ${{ env.STATUS == 'FAILED' }}
         uses: actions/github-script@v3
         with:
           threshold: ${{ env.THRESHOLD }}
           script: |
-              core.setFailed('Coverage of modified lines was below the required threshold ${threshold}.')
+              core.setFailed('Coverage of modified lines was below the required threshold (0.8).')
 
   # cargo_semver_checks:
   #   name: Cargo SemVer Checks
