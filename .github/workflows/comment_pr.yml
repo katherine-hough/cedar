@@ -28,15 +28,31 @@ jobs:
           RUN_ID: ${{github.event.workflow_run.id }}
           NAME: "coverage_result"
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - run: echo  ${{ github.event.workflow_run.html_url }}
+      - name: 'Comment on PR'
+        uses: actions/github-script@v3
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            var fs = require('fs');
+            var issue_number = Number(fs.readFileSync('./NR'));
+            await github.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue_number,
+              body: 'Everything is OK. Thank you for the PR!'
+            });
+      - name: Set status
+        shell: bash
+        run: echo "hello"
+      - run: echo  ${{ github.event.workflow_run.url }}
       - name: Add comment to PR
         shell: bash
         run: gh pr comment $PR --body-file markdown.md
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR: ${{ github.event.workflow_run.html_url }}
-      - name: Report threshold 
-        if: ${{ 0.7 < 0.8 }}
+          PR: ${{ context.repo.issue }}
+      - name: Report failures
+        if: ${{ env.STATUS == 'FAILED' }}
         uses: actions/github-script@v3
         with:
           script: |

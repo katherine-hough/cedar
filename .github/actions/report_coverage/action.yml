@@ -51,7 +51,7 @@ runs:
       shell: bash
       env:
         THRESHOLD: ${{ inputs.threshold }}
-      run: echo PASSED >> target/coverage/result.txt
+      run: echo FAILED >> target/coverage/result.txt
     - name: Upload coverage result
       uses: actions/upload-artifact@v4
       with:
