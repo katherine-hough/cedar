@@ -57,7 +57,7 @@ runs:
       with:
         name: coverage_result
         path: target/coverage/result.txt
-        retention-days: 2
+        retention-days: 1
     - name: Print report location
       shell: bash
       run: |
