@@ -62,3 +62,13 @@ runs:
       shell: bash
       run: |
         echo 'Full coverage report available at:  ${{ steps.upload-artifact.outputs.artifact-url }}'
+          - name: Save PR number
+    - name: Save PR number
+      shell: bash
+      run: |
+        mkdir -p ./pr
+        echo ${{ github.event.number }} > ./pr/NR
+    - uses: actions/upload-artifact@v2
+      with:
+        name: pr
+        path: pr/
