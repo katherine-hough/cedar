@@ -399,6 +399,20 @@ fn update_entity_map(map: &mut HashMap<EntityUID, Arc<Entity>>, entity: Arc<Enti
     Ok(())
 }
 
+#[allow(dead_code)]
+fn my_shiny_new_function(i: u32, j: u32) -> u32 {
+    let k = if i == 0 {
+        // Case 1
+        2
+    } else {
+        // Case 2
+        i * i
+    };
+    let w = j + 2;
+    let p = w + 1;
+    k + p
+}
+
 impl IntoIterator for Entities {
     type Item = Entity;
 
@@ -425,7 +439,7 @@ impl std::fmt::Display for Entities {
     }
 }
 
-/// Results from dereferencing values from the Entity Store
+/// Results from derefkerencing values from the Entity Store
 #[derive(Debug, Clone)]
 pub enum Dereference<'a, T> {
     /// No entity with the dereferenced EntityUID exists. This is an error.
@@ -2208,6 +2222,12 @@ mod entities_tests {
         // Assert that there is no longer an edge from F to B
         // as the only link was through D
         assert!(!f.is_descendant_of(&bid));
+    }
+
+    #[test]
+    fn test_my_shiny_new_function() {
+        let x = my_shiny_new_function(0, 3);
+        assert_matches!(x, 8);
     }
 }
 
