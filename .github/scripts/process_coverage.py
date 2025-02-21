@@ -128,7 +128,10 @@ def was_modified(entry, changed_lines):
         file_name in changed_lines and entry["line_number"] in changed_lines[file_name]
     )
 
-
+def santize_name(name):
+    allowed = ['-', '_', os.path.sep, '/']
+    return ''.join(filter(lambda c: str.isalnum(c) or c in allowed, name))
+    
 def create_table(entries, required_coverage, list_missed, group_key):
     entries = sorted(entries, key=lambda e: e[group_key])
     groups = itertools.groupby(entries, lambda e: e[group_key])
@@ -139,9 +142,8 @@ def create_table(entries, required_coverage, list_missed, group_key):
         if total_lines != 0:
             num_covered = total_lines - len(missed_lines)
             coverage = num_covered / total_lines
-            # TODO: escape name
             values = [
-                name,
+                santize_name(name),
                 format_proportion(coverage, required_coverage),
                 f"{num_covered}/{total_lines}",
             ]
