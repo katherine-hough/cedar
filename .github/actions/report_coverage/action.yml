@@ -29,7 +29,7 @@ runs:
         grcov raw_cov.zip \
             --source-dir . \
             --binary-path ./target/debug/ \
-            -t markdown,html,cobertura \
+            -t html,cobertura \
             --ignore 'target/debug/*' \
             --ignore "/*" \
             --ignore-not-existing \
@@ -40,25 +40,36 @@ runs:
       with:
         name: coverage_report
         path: target/coverage/html/
-        retention-days: 30
-    - name: Upload markdown summary
-      uses: actions/upload-artifact@v4
+        retention-days: 90
+    - name: Compute changed lines
+      id: changed_lines
+      uses: hestonhoffman/changed-lines@v1
       with:
-        name: coverage_summary
-        path: target/coverage/markdown.md
-        retention-days: 2
-    - name: Write coverage result
-      shell: bash
-      env:
-        THRESHOLD: ${{ inputs.threshold }}
-      run: echo FAILED >> target/coverage/result.txt
-    - name: Upload coverage result
-      uses: actions/upload-artifact@v4
+        file_filter: '.rs'
+    - name: Set up python
+      uses: actions/setup-python@v5
       with:
-        name: coverage_result
-        path: target/coverage/result.txt
-        retention-days: 2
-    - name: Print report location
+        python-version: 3.13
+    - name: Create result files
       shell: bash
       run: |
-        echo 'Full coverage report available at:  ${{ steps.upload-artifact.outputs.artifact-url }}'
+        mkdir -p target/coverage/results
+        echo $ISSUE_NUMBER >> target/coverage/results/issue_number.txt
+        echo $CHANGED_LINES >> target/coverage/results/changed_lines.json
+        python .github/scripts/process_coverage.py \
+          target/coverage/cobertura.xml \
+          target/coverage/results/changed_lines.json \
+          $THRESHOLD \
+          $REPORT_LOCATION \
+          target/coverage/results
+      env:
+        CHANGED_LINES: ${{ steps.changed_lines.outputs.changed_lines }}
+        THRESHOLD: ${{ inputs.threshold }}
+        ISSUE_NUMBER: ${{ github.event.number }}
+        REPORT_LOCATION: ${{ steps.upload-artifact.outputs.artifact-url }}
+    - name: Upload results
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage_results
+        path: target/coverage/results/
+        retention-days: 1
