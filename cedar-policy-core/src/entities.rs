@@ -377,6 +377,13 @@ fn create_entity_map(
     Ok(map)
 }
 
+#[allow(dead_code)]
+fn my_shiny_new_function_without_test(i: u32, j: u32) -> u32 {
+    let k = i * i;
+    let w = j * j;
+    k + w
+}
+
 /// Adds an entry to the specified map associating the EntityUID of the specified entity
 /// to the specified entity. Checks whether there is an entity already in the map
 /// with the same EntityUID as the specified entity. If such an entity is found and is
