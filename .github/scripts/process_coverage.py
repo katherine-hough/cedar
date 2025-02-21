@@ -16,7 +16,7 @@ $$MOD_SUMMARY$$
 <summary><b>Details</b></summary>
 
 | File | Coverage | Covered | Missed Lines|
-|:-----|---------:|---------|-------------|
+|:-----|---------:|:-------:|-------------|
 $$MOD_TABLE$$
 </details>
 
@@ -27,7 +27,7 @@ $$ALL_SUMMARY$$
 <summary><b>Details</b></summary>
 
 | Package | Coverage | Covered | 
-|:--------|---------:|---------|
+|:--------|---------:|:-------:|
 $$ALL_TABLE$$
 </details>
 """
@@ -55,7 +55,7 @@ def set_color2(color, text):
 
 def set_color(color, text):
     text = text.replace('%', r'\\%')
-    return r"${{\color{" + color + r"}\text{" + text + r"}}$"
+    return r"${\color{" + color + r"}\textsf{" + text + r"}}$"
 
 
 def format_proportion(actual, required):
