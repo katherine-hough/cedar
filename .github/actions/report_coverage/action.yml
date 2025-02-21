@@ -29,7 +29,7 @@ runs:
         grcov raw_cov.zip \
             --source-dir . \
             --binary-path ./target/debug/ \
-            -t markdown,html,cobertura \
+            -t html,cobertura \
             --ignore 'target/debug/*' \
             --ignore "/*" \
             --ignore-not-existing \
@@ -40,20 +40,33 @@ runs:
       with:
         name: coverage_report
         path: target/coverage/html/
-        retention-days: 30
-    - name: Collect results
+        retention-days: 90
+    - name: Compute changed lines
+      id: changed_lines
+      uses: hestonhoffman/changed-lines@v1
+      with:
+        file_filter: '.rs'
+    - name: Set up python
+      uses: actions/setup-python@v5
+      with:
+        python-version: 3.13
+    - name: Create result files
       shell: bash
+      run: |
+        mkdir -p target/coverage/results
+        echo $ISSUE_NUMBER >> target/coverage/results/issue_number.txt
+        echo $CHANGED_LINES >> target/coverage/results/changed_lines.json
+        python .github/scripts/process_coverage.py \
+          target/coverage/cobertura.xml \
+          target/coverage/results/changed_lines.json \
+          $THRESHOLD \
+          $REPORT_LOCATION \
+          target/coverage/results
       env:
+        CHANGED_LINES: ${{ steps.changed_lines.outputs.changed_files }}
         THRESHOLD: ${{ inputs.threshold }}
         ISSUE_NUMBER: ${{ github.event.number }}
         REPORT_LOCATION: ${{ steps.upload-artifact.outputs.artifact-url }}
-      run: |
-        mkdir -p target/coverage/results
-        echo "FAILED" >> target/coverage/results/status.txt
-        mv target/coverage/markdown.md target/coverage/results/
-        echo $ISSUE_NUMBER >> target/coverage/results/issue_number.txt
-        echo $REPORT_LOCATION >> target/coverage/results/report_location.txt
-        echo $THRESHOLD >> target/coverage/results/threshold.txt
     - name: Upload results
       uses: actions/upload-artifact@v4
       with:
