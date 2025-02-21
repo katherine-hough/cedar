@@ -189,7 +189,7 @@ def process(
         "MOD_",
         template_variables,
         True,
-        'class_name'
+        'file_name'
     )
     comment = create_comment(template_variables)
     write_results(output_dir, True if required_coverage == -1 else passed, comment)
