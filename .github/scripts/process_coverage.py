@@ -44,7 +44,7 @@ def format_lines(lines):
 
 
 def set_color(color, text):
-    return f'<span style="color:{color}">{text}</span>'
+    return f"$${{\\color{{{color}}}{text}}}$$"
 
 
 def format_proportion(actual, required):

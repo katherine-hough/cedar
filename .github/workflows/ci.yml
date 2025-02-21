@@ -28,7 +28,6 @@ jobs:
         if: ${{ env.STATUS == 'FAILED' }}
         uses: actions/github-script@v3
         with:
-          threshold: ${{ env.THRESHOLD }}
           script: |
               core.setFailed('Coverage of modified lines was below the required threshold 0.8')
 
