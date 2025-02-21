@@ -181,7 +181,7 @@ def process(
     )
     # Remove lines that were not modified
     modified_entries = list(filter(lambda e: was_modified(e, changed_lines), entries))
-    passed |= set_table_vars(
+    passed &= set_table_vars(
         modified_entries,
         required_coverage,
         "MOD_",
