@@ -27,7 +27,7 @@ def write_results(output_dir, passed, comment):
     with open(status_file, "w") as f:
         f.write("PASSED" if passed else "FAILED")
     comment_file = os.path.join(output_dir, "markdown.md")
-    with open(comment_file, "r") as f:
+    with open(comment_file, "w") as f:
         f.write(comment)
 
 def read_json(file):
