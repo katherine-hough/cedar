@@ -22,7 +22,7 @@ def collect_line_coverage(cobertura_file):
 
 
 def write_results(output_dir, passed, comment):
-    os.makedirs(pathlib.Path(output_dir).parent, exist_ok=True)
+    os.makedirs(pathlib.Path(output_dir), exist_ok=True)
     status_file = os.path.join(output_dir, "status.txt")
     with open(status_file, "w") as f:
         f.write("PASSED" if passed else "FAILED")
