@@ -16,7 +16,7 @@ $$MOD_SUMMARY$$
 <summary><b>Details</b></summary>
 
 | File | Coverage | Covered | Missed Lines|
-|------|----------|---------|-------------|
+|:-----|---------:|---------|-------------|
 $$MOD_TABLE$$
 </details>
 
@@ -26,8 +26,8 @@ $$ALL_SUMMARY$$
 <details>
 <summary><b>Details</b></summary>
 
-| File | Coverage | Covered | Missed Lines|
-|------|----------|---------|-------------|
+| Package | Coverage | Covered | 
+|:--------|---------:|---------|
 $$ALL_TABLE$$
 </details>
 """
@@ -49,11 +49,11 @@ def format_lines(lines):
     return ", ".join(x)
 
 
-def set_color(color, text):
+def set_color2(color, text):
     return f'<span style="color:{color};">{text}</span>'
 
 
-def set_color2(color, text):
+def set_color(color, text):
     return r"$$\color{" + color + "}" + text + "}$$"
 
 
@@ -66,16 +66,6 @@ def format_proportion(actual, required):
     else:
         color = "goldenrod" if actual >= (required - 0.1) else "crimson"
     return set_color(color, text)
-
-
-def format_row(file_name, missed_lines, total_lines, threshold):
-    num_covered = total_lines - len(missed_lines)
-    coverage = num_covered / total_lines
-    # TODO: escape file_name
-    return (
-        f"{file_name} | {format_proportion(coverage, threshold)} |"
-        + f"{num_covered}/{total_lines} | {format_lines(missed_lines)}"
-    )
 
 
 def create_summary(actual_coverage, required_coverage):
@@ -96,9 +86,12 @@ def collect_line_coverage(cobertura_file):
     tree = ET.parse(cobertura_file)
     root = tree.getroot()
     for clazz in root.findall("packages/package/classes/class"):
+        file_name = clazz.attrib["filename"]
+        package = file_name.split(os.path.sep)[0]
         for line in clazz.findall("lines/line"):
             yield dict(
-                file_name=clazz.attrib["filename"],
+                package=package,
+                file_name=file_name,
                 line_number=int(line.attrib["number"]),
                 hit_count=int(line.attrib["hits"]),
             )
@@ -133,21 +126,25 @@ def was_modified(entry, changed_lines):
     )
 
 
-def process_file(group):
-    total = len(group)
-    missed = [x["line_number"] for x in group if x["hit_count"] == 0]
-    return total, missed
-
-
-def create_table(entries, threshold):
-    entries = sorted(entries, key=lambda e: e["file_name"])
-    groups = itertools.groupby(entries, lambda e: e["file_name"])
-    for file_name, group in groups:
+def create_table(entries, required_coverage, list_missed, group_key):
+    entries = sorted(entries, key=lambda e: e[group_key])
+    groups = itertools.groupby(entries, lambda e: e[group_key])
+    for name, group in groups:
         group = list(group)
         missed_lines = [x["line_number"] for x in group if x["hit_count"] == 0]
         total_lines = len(group)
         if total_lines != 0:
-            yield format_row(file_name, missed_lines, total_lines, threshold)
+            num_covered = total_lines - len(missed_lines)
+            coverage = num_covered / total_lines
+            # TODO: escape name
+            values = [
+                name,
+                format_proportion(coverage, required_coverage),
+                f"{num_covered}/{total_lines}",
+            ]
+            if list_missed:
+                values.append(format_lines(missed_lines))
+            yield " | ".join(values)
 
 
 def compute_actual_coverage(entries):
@@ -156,9 +153,11 @@ def compute_actual_coverage(entries):
     return covered / total
 
 
-def set_table_vars(entries, required_coverage, prefix, template_variables):
+def set_table_vars(
+    entries, required_coverage, prefix, template_variables, list_missed, group_key
+):
     template_variables[prefix + "TABLE"] = "\n".join(
-        create_table(entries, required_coverage)
+        create_table(entries, required_coverage, list_missed, group_key)
     )
     actual_coverage = 1.0 if len(entries) == 0 else compute_actual_coverage(entries)
     template_variables[prefix + "SUMMARY"] = create_summary(
@@ -174,11 +173,18 @@ def process(
     entries = list(collect_line_coverage(cobertura_file))
     changed_lines = read_json(changed_lines_file)
     template_variables = dict(REPORT_LOCATION=report_location)
-    passed = set_table_vars(entries, required_coverage, "ALL_", template_variables)
+    passed = set_table_vars(
+        entries, required_coverage, "ALL_", template_variables, False, 'package'
+    )
     # Remove lines that were not modified
     modified_entries = list(filter(lambda e: was_modified(e, changed_lines), entries))
     passed |= set_table_vars(
-        modified_entries, required_coverage, "MOD_", template_variables
+        modified_entries,
+        required_coverage,
+        "MOD_",
+        template_variables,
+        True,
+        'class_name'
     )
     comment = create_comment(template_variables)
     write_results(output_dir, passed, comment)
