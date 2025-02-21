@@ -68,16 +68,33 @@ impl From<&models::Name> for ast::Name {
     }
 }
 
-impl From<&ast::Name> for models::Name {
-    fn from(v: &ast::Name) -> Self {
+impl From<&models::Name> for ast::EntityType {
+    fn from(v: &models::Name) -> Self {
+        ast::EntityType::from(ast::Name::from(v))
+    }
+}
+
+impl From<&ast::InternalName> for models::Name {
+    fn from(v: &ast::InternalName) -> Self {
         Self {
             id: v.basename().to_string(),
             path: v
-                .as_ref()
                 .namespace_components()
                 .map(|id| String::from(id.as_ref()))
                 .collect(),
         }
+    }
+}
+
+impl From<&ast::Name> for models::Name {
+    fn from(v: &ast::Name) -> Self {
+        Self::from(v.as_ref())
+    }
+}
+
+impl From<&ast::EntityType> for models::Name {
+    fn from(v: &ast::EntityType) -> Self {
+        Self::from(v.as_ref())
     }
 }
 
@@ -466,7 +483,9 @@ impl From<&ast::Expr> for models::Expr {
                     .map(|(key, value)| (key.to_string(), models::Expr::from(value)))
                     .collect();
                 models::expr::expr_kind::Data::Record(models::expr::Record { items: precord })
-            }
+            },
+            #[cfg(feature="tolerant-ast")]
+            ast::ExprKind::Error { .. } => unimplemented!("Protobufs feature not compatible with ASTs that contain error nodes - this should never happen"),
         };
         Self {
             expr_kind: Some(Box::new(models::expr::ExprKind {
