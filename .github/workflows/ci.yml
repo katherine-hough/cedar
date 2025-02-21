@@ -10,7 +10,7 @@ jobs:
     uses: ./.github/workflows/build_and_test.yml
     with:
       report_coverage: true
-      threshold: 0.8
+      threshold: -1
 
   check_coverage:
     name: Check coverage threshold

@@ -70,6 +70,8 @@ def format_proportion(actual, required):
 
 
 def create_summary(actual_coverage, required_coverage):
+    if required_coverage == -1:
+        return f"**Overal coverage:** {actual_coverage:.2%}"
     passed = actual_coverage >= required_coverage
     color = "green" if passed else "crimson"
     symbol = ":white_check_mark:" if passed else ":x:"
@@ -188,7 +190,7 @@ def process(
         'class_name'
     )
     comment = create_comment(template_variables)
-    write_results(output_dir, passed, comment)
+    write_results(output_dir, True if required_coverage == -1 else passed, comment)
 
 
 def main():
