@@ -7,13 +7,16 @@ import xml.etree.ElementTree as ET
 TEMPLATE = """
 # Coverage Report
 
-[Download the full coverage report]($$REPORT_LOCATION$$)
+[Download the full coverage report.]($$REPORT_LOCATION$$)
 
 ## Coverage of Added or Modified Lines of Rust Code
 $$MOD_SUMMARY$$
 
 <details>
 <summary><b>Details</b></summary>
+
+| File | Coverage | Covered | Missed Lines|
+|------|----------|---------|-------------|
 $$MOD_TABLE$$
 </details>
 
@@ -22,6 +25,9 @@ $$ALL_SUMMARY$$
 
 <details>
 <summary><b>Details</b></summary>
+
+| File | Coverage | Covered | Missed Lines|
+|------|----------|---------|-------------|
 $$ALL_TABLE$$
 </details>
 """
@@ -44,7 +50,11 @@ def format_lines(lines):
 
 
 def set_color(color, text):
-    return f"$${{\\color{{{color}}}{text}}}$$"
+    return f'<span style="color:{color};">{text}</span>'
+
+
+def set_color2(color, text):
+    return r"$$\color{" + color + "}" + text + "}$$"
 
 
 def format_proportion(actual, required):
@@ -56,6 +66,16 @@ def format_proportion(actual, required):
     else:
         color = "goldenrod" if actual >= (required - 0.1) else "crimson"
     return set_color(color, text)
+
+
+def format_row(file_name, missed_lines, total_lines, threshold):
+    num_covered = total_lines - len(missed_lines)
+    coverage = num_covered / total_lines
+    # TODO: escape file_name
+    return (
+        f"{file_name} | {format_proportion(coverage, threshold)} |"
+        + f"{num_covered}/{total_lines} | {format_lines(missed_lines)}"
+    )
 
 
 def create_summary(actual_coverage, required_coverage):
@@ -119,30 +139,7 @@ def process_file(group):
     return total, missed
 
 
-def add_table_row(parent, values, header=False):
-    tr = ET.Element("tr")
-    parent.append(tr)
-    for value in values:
-        e = ET.Element("th" if header else "td")
-        tr.append(e)
-        e.text = value
-
-
-def format_row_values(file_name, missed_lines, total_lines, required_coverage):
-    num_covered = total_lines - len(missed_lines)
-    coverage = num_covered / total_lines
-    # TODO: escape file_name
-    return (
-        file_name,
-        format_proportion(coverage, required_coverage),
-        f"{format_proportion(coverage, required_coverage)}",
-        format_lines(missed_lines),
-    )
-
-
-def create_table(entries, required_coverage):
-    table = ET.Element("table")
-    add_table_row(table, ["File", "Coverage", "Covered", "Missed Lines"], True)
+def create_table(entries, threshold):
     entries = sorted(entries, key=lambda e: e["file_name"])
     groups = itertools.groupby(entries, lambda e: e["file_name"])
     for file_name, group in groups:
@@ -150,13 +147,7 @@ def create_table(entries, required_coverage):
         missed_lines = [x["line_number"] for x in group if x["hit_count"] == 0]
         total_lines = len(group)
         if total_lines != 0:
-            add_table_row(
-                table,
-                format_row_values(
-                    file_name, missed_lines, total_lines, required_coverage
-                ),
-            )
-    return ET.tostring(table, encoding="unicode")
+            yield format_row(file_name, missed_lines, total_lines, threshold)
 
 
 def compute_actual_coverage(entries):
@@ -166,7 +157,9 @@ def compute_actual_coverage(entries):
 
 
 def set_table_vars(entries, required_coverage, prefix, template_variables):
-    template_variables[prefix + "TABLE"] = create_table(entries, required_coverage)
+    template_variables[prefix + "TABLE"] = "\n".join(
+        create_table(entries, required_coverage)
+    )
     actual_coverage = 1.0 if len(entries) == 0 else compute_actual_coverage(entries)
     template_variables[prefix + "SUMMARY"] = create_summary(
         actual_coverage, required_coverage
@@ -184,7 +177,7 @@ def process(
     passed = set_table_vars(entries, required_coverage, "ALL_", template_variables)
     # Remove lines that were not modified
     modified_entries = list(filter(lambda e: was_modified(e, changed_lines), entries))
-    passed &= set_table_vars(
+    passed |= set_table_vars(
         modified_entries, required_coverage, "MOD_", template_variables
     )
     comment = create_comment(template_variables)
