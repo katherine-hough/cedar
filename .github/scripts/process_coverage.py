@@ -54,7 +54,7 @@ def set_color2(color, text):
 
 
 def set_color(color, text):
-    return r"$$\color{" + color + "}" + text + "}$$"
+    return r"$${\color{" + color + "}" + text + "}$$"
 
 
 def format_proportion(actual, required):
