@@ -107,27 +107,27 @@ jobs:
   #   - run: cargo hack check --rust-version --workspace --all-targets --ignore-private
 
   # wasm-build:
-    name: run wasm build script
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest-large, macos-latest]
-    runs-on: ${{ matrix.os }}
+    # name: run wasm build script
+    # strategy:
+    #   matrix:
+    #     os: [ubuntu-latest, macos-latest-large, macos-latest]
+    # runs-on: ${{ matrix.os }}
 
-    env:
-      RUSTFLAGS: '-D warnings -F unsafe-code'
+    # env:
+    #   RUSTFLAGS: '-D warnings -F unsafe-code'
 
-    steps:
-      - uses: actions/checkout@v4
-      - name: update llvm (macOS)
-        if: ${{ matrix.os  == 'macos-latest-large' }}
-        run: brew install llvm && echo "/usr/local/opt/llvm/bin" >> $GITHUB_PATH
-      - name: update llvm (macOSarm64)
-        if: ${{ matrix.os  == 'macos-latest' }}
-        run: brew install llvm && echo "/opt/homebrew/opt/llvm/bin" >> $GITHUB_PATH
-      - name: install typescript
-        if: ${{ matrix.os  != 'ubuntu-latest' }}
-        run: npm install -g typescript
-      - name: install wasm-pack
-        run: cargo install wasm-pack
-      - name: build wasm and test build
-        run: cd ./cedar-wasm && TEST_TS=1 ./build-wasm.sh
+    # steps:
+    #   - uses: actions/checkout@v4
+    #   - name: update llvm (macOS)
+    #     if: ${{ matrix.os  == 'macos-latest-large' }}
+    #     run: brew install llvm && echo "/usr/local/opt/llvm/bin" >> $GITHUB_PATH
+    #   - name: update llvm (macOSarm64)
+    #     if: ${{ matrix.os  == 'macos-latest' }}
+    #     run: brew install llvm && echo "/opt/homebrew/opt/llvm/bin" >> $GITHUB_PATH
+    #   - name: install typescript
+    #     if: ${{ matrix.os  != 'ubuntu-latest' }}
+    #     run: npm install -g typescript
+    #   - name: install wasm-pack
+    #     run: cargo install wasm-pack
+    #   - name: build wasm and test build
+    #     run: cd ./cedar-wasm && TEST_TS=1 ./build-wasm.sh
