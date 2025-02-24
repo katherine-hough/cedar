@@ -47,7 +47,7 @@ runs:
           cobertura.xml \
           target/coverage/results/changed_lines.json \
           $THRESHOLD \
-          $(cat rreport_location.txt) \
+          $(cat report_location.txt) \
           target/coverage/results
         echo "STATUS=$(cat target/coverage/results/status.txt)" >> $GITHUB_ENV
       env:
