@@ -35,10 +35,10 @@ jobs:
         if: ${{ env.STATUS == 'completed' }}
         shell: bash
         run: |
-          echo "ISSUE_NUMBER=$(cat coverage_results/issue_number.txt)" >> $GITHUB_ENV
+          echo "ISSUE_NUMBER=$(cat coverage_comment/issue_number.txt)" >> $GITHUB_ENV
       - name: Add comment to PR
         if: ${{ env.STATUS == 'completed' }}
         shell: bash
-        run: gh pr comment $ISSUE_NUMBER --body-file coverage_results/markdown.md
+        run: gh pr comment $ISSUE_NUMBER --body-file coverage_comment/markdown.md
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

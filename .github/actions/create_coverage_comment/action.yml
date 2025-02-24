@@ -3,7 +3,7 @@ description: >
   Build a markdown comment to be posted to a PR by the "comment_pr" workflow.
   If threshold is set, fails the build if the reported coverage does not meet
   met expected criteria.
-  Downloads a cobertura XML coverage report from the current workflow run.
+  Downloads the cobertura coverage report for the current workflow run.
   TODO
   Uploads the created markdown comment and the number of the PR that triggered this action as workflow artifacts.
 inputs:
@@ -12,8 +12,8 @@ inputs:
       Minimum proportion of modified lines that need to be covered for acceptance or -1 if there is no minimum.
     required: false
     default: "-1"
-  report-artifact-name:
-    description: "Name of the artifact to be downloaded"
+  report-artifact-prefix:
+    description: "Prefix the name of the artifact to be downloaded"
     required: false
     default: "coverage_reports"
   comment-artifact-name:
@@ -24,11 +24,10 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Download artifacts
+    - name: Download report artifacts
       uses: actions/download-artifact@v4
       with: 
-        name: ${{ inputs.report-artifact-name }}
-        path: 
+        name: ${{ report-artifact-prefix }}_cobertua
     - name: List files
       shell: bash
       run: ls -a 
@@ -45,24 +44,28 @@ runs:
       shell: bash
       run: |
         mkdir -p target/coverage/results
-        echo $ISSUE_NUMBER >> target/coverage/results/issue_number.txt
-        echo $CHANGED_LINES >> target/coverage/results/changed_lines.json
+        echo $ISSUE_NUMBER > target/coverage/results/issue_number.txt
+        echo $CHANGED_LINES > target/coverage/results/changed_lines.json
         python .github/scripts/process_coverage.py \
-          target/coverage/cobertura.xml \
+          cobertura.xml \
           target/coverage/results/changed_lines.json \
           $THRESHOLD \
           $REPORT_LOCATION \
           target/coverage/results
         echo "STATUS=$(cat target/coverage/results/status.txt)" >> $GITHUB_ENV
+        echo "HEAD_SHA: $HEAD_SHA"
+        echo "BASE_SHA: $BASE_SHA"
       env:
         CHANGED_LINES: ${{ steps.changed_lines.outputs.changed_lines }}
         THRESHOLD: ${{ inputs.threshold }}
         ISSUE_NUMBER: ${{ github.event.number }}
-        REPORT_LOCATION: ${{ steps.upload-artifact.outputs.artifact-url }}
+        REPORT_LOCATION: $(cat rreport_location.txt)
+        HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        BASE_SHA: ${{ github.event.pull_request.base.sha }}
     - name: Upload results
       uses: actions/upload-artifact@v4
       with:
-        name: coverage_results
+        name: ${{ inputs.comment-artifact-name }}
         path: target/coverage/results/
         retention-days: 1
     - name: Check status
@@ -70,4 +73,4 @@ runs:
       uses: actions/github-script@v3
       with:
         script: |
-            core.setFailed('Coverage was below the required threshold')
+            core.setFailed('Required coverage criteria were not met.')
