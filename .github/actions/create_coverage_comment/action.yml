@@ -60,7 +60,7 @@ runs:
       shell: bash
       run: |
         gh run list \
-          --commit $BASE_COMMIT_ID \
+          --commit $BASE_SHA \
           --status "success" \
           --workflow  "Nightly Build" \
           --limit 1 --json "databaseId" \
@@ -68,10 +68,6 @@ runs:
           > base_run_id.txt
         cat base_run_id.txt
       env:
-        CHANGED_LINES: ${{ steps.changed_lines.outputs.changed_lines }}
-        THRESHOLD: ${{ inputs.threshold }}
-        ISSUE_NUMBER: ${{ github.event.number }}
-        HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         BASE_SHA: ${{ github.event.pull_request.base.sha }}
     - name: Upload results
       uses: actions/upload-artifact@v4
