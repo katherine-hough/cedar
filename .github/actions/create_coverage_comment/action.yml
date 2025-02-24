@@ -56,12 +56,18 @@ runs:
         ISSUE_NUMBER: ${{ github.event.number }}
         HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         BASE_SHA: ${{ github.event.pull_request.base.sha }}
+    - name: Upload results
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.comment-artifact-name }}
+        path: target/coverage/results/
+        retention-days: 1
     - name: Find last nightly run
       shell: bash
       run: |
         gh run list \
           --commit $BASE_SHA \
-          --status "success" \
+          --status "success" \ 
           --workflow  "Nightly Build" \
           --limit 1 --json "databaseId" \
           | jq --raw-output '.[0]["databaseId"]' \
@@ -71,12 +77,6 @@ runs:
       env:
         BASE_SHA: ${{ github.event.pull_request.base.sha }}
         GH_TOKEN: ${{ github.token }}
-    - name: Upload results
-      uses: actions/upload-artifact@v4
-      with:
-        name: ${{ inputs.comment-artifact-name }}
-        path: target/coverage/results/
-        retention-days: 1
     - name: Check status
       if: ${{ env.STATUS == 'FAILED' }}
       uses: actions/github-script@v3
