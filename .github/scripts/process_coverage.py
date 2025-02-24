@@ -108,7 +108,7 @@ def get_status(actual_coverage, required_coverage):
     elif actual_coverage >= (required_coverage - 0.1):
         return ":yellow_circle:"
     else:
-        return "red_circle:"
+        return ":red_circle:"
 
 
 def create_table(entries, required_coverage, list_missed, group_key):
@@ -233,7 +233,7 @@ def process(
     all_table = create_comparison_table(entries, base_entries, required_coverage)
     mod_table = [
         create_row(name, list(group), required_coverage)
-        for name, group in group_entries(entries, "file_name").items()
+        for name, group in group_entries(modified_entries, "file_name").items()
     ]
     template_variables = dict(
         REPORT_LOCATION=report_location,
