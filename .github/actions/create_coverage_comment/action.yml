@@ -27,7 +27,7 @@ runs:
     - name: Download report artifacts
       uses: actions/download-artifact@v4
       with: 
-        name: ${{ inputs.report-artifact-prefix }}_cobertua
+        name: ${{ inputs.report-artifact-prefix }}_cobertura
     - name: List files
       shell: bash
       run: ls -a 
@@ -62,6 +62,17 @@ runs:
         REPORT_LOCATION: $(cat rreport_location.txt)
         HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         BASE_SHA: ${{ github.event.pull_request.base.sha }}
+    - name: Find last nightly run.
+      shell: bash
+      run: |
+        gh run list \
+          --commit $BASE_COMMIT_ID \
+          --status success \
+          --workflow  "Nightly Build" \
+          --limit 1 --json "databaseId" \
+          | jq --raw-output '.[0]["databaseId"]' \
+          > base_run_id.txt
+        cat base_run_id.txt
     - name: Upload results
       uses: actions/upload-artifact@v4
       with:
