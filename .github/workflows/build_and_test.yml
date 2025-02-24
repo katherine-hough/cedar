@@ -6,6 +6,13 @@ on:
         required: false
         default: false
         type: boolean
+      retention-days:
+        description: >
+          Duration after which the uploaded coverage artifacts will expire in days, or 0 to use the default setting 
+          for the repository.
+        required: false
+        default: "0"
+        type: string
 
 jobs:
   build_and_test:
@@ -50,6 +57,8 @@ jobs:
       - name: Create a coverage report
         if: ${{ inputs.collect_coverage }} && ${{ matrix.toolchain }} == 'stable'
         uses: ./.github/actions/create_coverage_reports
+        with:
+          retention-days: ${{ inputs.retention-days }}
 
   # # Clippy in its own job so that the `RUSTFLAGS` set for `build_and_test`
   # # don't effect it. As a side effect, this will run in parallel, saving some
