@@ -28,9 +28,6 @@ runs:
       uses: actions/download-artifact@v4
       with: 
         name: ${{ inputs.report-artifact-prefix }}_cobertura
-    - name: List files
-      shell: bash
-      run: ls -a 
     - name: Compute changed lines
       id: changed_lines
       uses: hestonhoffman/changed-lines@v1
@@ -50,19 +47,16 @@ runs:
           cobertura.xml \
           target/coverage/results/changed_lines.json \
           $THRESHOLD \
-          $REPORT_LOCATION \
+          $(cat rreport_location.txt) \
           target/coverage/results
         echo "STATUS=$(cat target/coverage/results/status.txt)" >> $GITHUB_ENV
-        echo "HEAD_SHA: $HEAD_SHA"
-        echo "BASE_SHA: $BASE_SHA"
       env:
         CHANGED_LINES: ${{ steps.changed_lines.outputs.changed_lines }}
         THRESHOLD: ${{ inputs.threshold }}
         ISSUE_NUMBER: ${{ github.event.number }}
-        REPORT_LOCATION: $(cat rreport_location.txt)
         HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         BASE_SHA: ${{ github.event.pull_request.base.sha }}
-    - name: Find last nightly run.
+    - name: Find last nightly run
       shell: bash
       run: |
         gh run list \
@@ -73,6 +67,12 @@ runs:
           | jq --raw-output '.[0]["databaseId"]' \
           > base_run_id.txt
         cat base_run_id.txt
+      env:
+        CHANGED_LINES: ${{ steps.changed_lines.outputs.changed_lines }}
+        THRESHOLD: ${{ inputs.threshold }}
+        ISSUE_NUMBER: ${{ github.event.number }}
+        HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        BASE_SHA: ${{ github.event.pull_request.base.sha }}
     - name: Upload results
       uses: actions/upload-artifact@v4
       with:
