@@ -11,8 +11,8 @@ jobs:
     with:
       collect_coverage: true
 
-  process_coverage:
-    name: Create coverage PR comment and check coverage criteria
+  check_coverage:
+    name: Check coverage criteria
     needs: build_and_test
     runs-on: ubuntu-latest
     steps:
