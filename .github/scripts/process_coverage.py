@@ -1,11 +1,15 @@
 import json
 import os
+import itertools
 import pathlib
 import sys
 import xml.etree.ElementTree as ET
 
 TEMPLATE = """
 # Coverage Report
+Head Commit: $$HEAD_SHA$$
+
+Base Commit: $$BASE_SHA$$
 
 [Download the full coverage report.]($$REPORT_LOCATION$$)
 
@@ -15,8 +19,8 @@ $$MOD_SUMMARY$$
 <details>
 <summary><b>Details</b></summary>
 
-| File | Coverage | Covered | Status | Missed Lines |
-|:-----|---------:|:-------:|:------:|--------------|
+| File | Status | Covered | Coverage | Missed Lines |
+|:-----|:------:|:-------:|---------:|:-------------|
 $$MOD_TABLE$$
 </details>
 
@@ -26,13 +30,11 @@ $$ALL_SUMMARY$$
 <details>
 <summary><b>Details</b></summary>
 
-| Package | Coverage | Covered | Status |
-|:--------|---------:|:-------:|:------:|
+| Package | Status | Covered | Coverage | Base Coverage |
+|:--------|:------:|:-------:|---------:|--------------:|
 $$ALL_TABLE$$
 </details>
 """
-
-import itertools
 
 
 def to_ranges(iterable):
@@ -47,20 +49,6 @@ def to_ranges(iterable):
 def format_lines(lines):
     x = [str(x) if x == y else f"{x}-{y}" for x, y in to_ranges(lines)]
     return ", ".join(x)
-
-
-def create_summary(actual_coverage, required_coverage):
-    if required_coverage == -1:
-        return f"**Overall coverage:** {actual_coverage:.2%}"
-    passed = actual_coverage >= required_coverage
-    symbol = ":white_check_mark:" if passed else ":x:"
-    return (
-        f"**Required coverage:** {required_coverage:.2%}"
-        + "\n\n"
-        + f"**Actual coverage:** {actual_coverage:.2%}"
-        + "\n\n"
-        + f"**Status:** {"PASSED" if passed else "FAILED"} {symbol}"
-    )
 
 
 def collect_line_coverage(cobertura_file):
@@ -117,12 +105,10 @@ def get_status(actual_coverage, required_coverage):
         return ":white_circle:"
     elif actual_coverage >= required_coverage:
         return ":green_circle:"
+    elif actual_coverage >= (required_coverage - 0.1):
+        return ":yellow_circle:"
     else:
-        return (
-            ":yellow_circle:"
-            if actual_coverage >= (required_coverage - 0.1)
-            else ":red_circle:"
-        )
+        return "red_circle:"
 
 
 def create_table(entries, required_coverage, list_missed, group_key):
@@ -149,20 +135,77 @@ def create_table(entries, required_coverage, list_missed, group_key):
 def compute_actual_coverage(entries):
     total = len(entries)
     covered = len([x for x in entries if x["hit_count"] != 0])
-    return covered / total
+    return covered / total if total != 0 else 1.0
 
 
-def set_table_vars(
-    entries, required_coverage, prefix, template_variables, list_missed, group_key
-):
-    template_variables[prefix + "TABLE"] = "\n".join(
-        create_table(entries, required_coverage, list_missed, group_key)
-    )
+def group_entries(entries, key):
+    entries = sorted(entries, key=lambda e: e[key])
+    groups = itertools.groupby(entries, lambda e: e[key])
+    result = {}
+    for name, group in groups:
+        group = list(group)
+        if len(group) != 0:
+            result[name] = group
+    return result
+
+
+def create_row(name, group, required_coverage):
+    missed_lines = [x["line_number"] for x in group if x["hit_count"] == 0]
+    total_lines = len(group)
+    num_covered = total_lines - len(missed_lines)
+    coverage = num_covered / total_lines if total_lines != 0 else 1.0
+    return [
+        santize_name(name),
+        get_status(coverage, required_coverage),
+        f"{num_covered}/{total_lines}",
+        f"{coverage:.2%}" if total_lines != 0 else "--",
+        format_lines(missed_lines),
+    ]
+
+
+def create_comparison_table(entries, base_entries, required_coverage):
+    group_key = "package"
+    base_groups = group_entries(base_entries, group_key)
+    groups = group_entries(entries, group_key)
+    for name, group in groups:
+        row = create_row(name, list(group), required_coverage)[:-1]
+        if name in base_groups:
+            row.append(compute_actual_coverage(base_groups[name]))
+        else:
+            row.append("--")
+        yield row
+    for name, base_group in base_groups:
+        if name in groups:
+            continue
+        row = create_row(name, list(group), required_coverage)[:-1]
+        row.append(compute_actual_coverage(base_group))
+        yield row
+
+
+def format_table(rows):
+    return "\n".join([" | ".join(row) for row in rows])
+
+
+def create_summary(entries, required_coverage):
     actual_coverage = 1.0 if len(entries) == 0 else compute_actual_coverage(entries)
-    template_variables[prefix + "SUMMARY"] = create_summary(
-        actual_coverage, required_coverage
+    if required_coverage == -1:
+        return f"**Overall coverage:** {actual_coverage:.2%}"
+    passed = actual_coverage >= required_coverage
+    return (
+        f"**Required coverage:** {required_coverage:.2%}"
+        + "\n\n"
+        + f"**Actual coverage:** {actual_coverage:.2%}"
+        + "\n\n"
+        + f"**Status:** {"PASSED" if passed else "FAILED"} {":white_check_mark:" if passed else ":x:"}"
     )
-    return actual_coverage >= required_coverage
+
+
+def check_criteria(entries, required_coverage):
+    return (
+        required_coverage == -1
+        or len(entries) == 0
+        or (compute_actual_coverage(entries) >= required_coverage)
+    )
 
 
 def process(
@@ -178,22 +221,36 @@ def process(
     required_coverage = float(required_coverage)
     entries = list(collect_line_coverage(cobertura_file))
     changed_lines = read_json(changed_lines_file)
-    template_variables = dict(REPORT_LOCATION=report_location)
-    passed = set_table_vars(
-        entries, required_coverage, "ALL_", template_variables, False, "package"
-    )
     # Remove lines that were not modified
     modified_entries = list(filter(lambda e: was_modified(e, changed_lines), entries))
-    passed &= set_table_vars(
-        modified_entries,
-        required_coverage,
-        "MOD_",
-        template_variables,
-        True,
-        "file_name",
+    # Read coverage for PR BASE
+    base_entries = (
+        list(collect_line_coverage(base_cobertura_file))
+        if os.path.exists(base_cobertura_file)
+        else []
     )
-    comment = create_comment(template_variables)
-    write_results(output_dir, True if required_coverage == -1 else passed, comment)
+    # Create tables
+    all_table = create_comparison_table(entries, base_entries, required_coverage)
+    mod_table = [
+        create_row(name, list(group), required_coverage)
+        for name, group in group_entries(entries, "file_name")
+    ]
+    template_variables = dict(
+        REPORT_LOCATION=report_location,
+        HEAD_SHA=head_sha,
+        BASE_SHA=base_sha,
+        ALL_SUMMARY=create_summary(entries, required_coverage),
+        MOD_SUMMARY=create_summary(modified_entries, required_coverage),
+        ALL_TABLE=format_table(all_table),
+        MOD_TABLE=format_table(mod_table),
+    )
+    passed = check_criteria(entries, required_coverage)
+    passed &= check_criteria(modified_entries, required_coverage)
+    write_results(
+        output_dir,
+        passed,
+        create_comment(template_variables),
+    )
 
 
 def main():
