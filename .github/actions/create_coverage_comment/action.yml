@@ -13,9 +13,9 @@ inputs:
     required: false
     default: "-1"
   report-artifact-prefix:
-    description: "Prefix the name of the artifact to be downloaded"
+    description: "Prefix of the name of the artifact to be downloaded"
     required: false
-    default: "coverage_reports"
+    default: "coverage_report"
   comment-artifact-name:
     description: "Name of the artifact to be uploaded"
     required: false
@@ -27,7 +27,7 @@ runs:
     - name: Download report artifacts
       uses: actions/download-artifact@v4
       with: 
-        name: ${{ report-artifact-prefix }}_cobertua
+        name: ${{ inputs.report-artifact-prefix }}_cobertua
     - name: List files
       shell: bash
       run: ls -a 
