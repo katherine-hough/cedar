@@ -167,10 +167,11 @@ def create_comparison_table(entries, base_entries, required_coverage):
     group_key = "package"
     base_groups = group_entries(base_entries, group_key)
     groups = group_entries(entries, group_key)
-    for name, group in groups:
+    for name, group in groups.items():
         row = create_row(name, list(group), required_coverage)[:-1]
         if name in base_groups:
-            row.append(compute_actual_coverage(base_groups[name]))
+            base_coverage = compute_actual_coverage(base_groups[name])
+            row.append(f"{base_coverage:.2%}")
         else:
             row.append("--")
         yield row
@@ -178,7 +179,8 @@ def create_comparison_table(entries, base_entries, required_coverage):
         if name in groups:
             continue
         row = create_row(name, list(group), required_coverage)[:-1]
-        row.append(compute_actual_coverage(base_group))
+        base_coverage = compute_actual_coverage(base_group)
+        row.append(f"{base_coverage:.2%}")
         yield row
 
 
@@ -224,16 +226,14 @@ def process(
     # Remove lines that were not modified
     modified_entries = list(filter(lambda e: was_modified(e, changed_lines), entries))
     # Read coverage for PR BASE
-    base_entries = (
-        list(collect_line_coverage(base_cobertura_file))
-        if os.path.exists(base_cobertura_file)
-        else []
-    )
+    base_entries = []
+    if os.path.exists(base_cobertura_file):
+        base_entries = list(collect_line_coverage(base_cobertura_file))
     # Create tables
     all_table = create_comparison_table(entries, base_entries, required_coverage)
     mod_table = [
         create_row(name, list(group), required_coverage)
-        for name, group in group_entries(entries, "file_name")
+        for name, group in group_entries(entries, "file_name").items()
     ]
     template_variables = dict(
         REPORT_LOCATION=report_location,
