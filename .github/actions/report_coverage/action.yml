@@ -5,6 +5,10 @@ inputs:
     description: "Minimum proportion of modified lines that need to be covered for acceptance or -1 if there is no minimum."
     required: false
     default: "-1"
+  retention-days:
+    description: "Duration after which artifact will expire in days, or 0 to use the default setting for the repository"
+    required: false
+    default: "0"
 
 runs:
   using: "composite"
@@ -40,7 +44,7 @@ runs:
       with:
         name: coverage_report
         path: target/coverage/html/
-        retention-days: 90
+        retention-days: ${{ inputs.retention-days }}
     - name: Compute changed lines
       id: changed_lines
       uses: hestonhoffman/changed-lines@v1
