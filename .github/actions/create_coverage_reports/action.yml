@@ -2,19 +2,19 @@ name: "Create Coverage Reports"
 description: >
   Searches the directory tree rooted at the current working directory for raw coverage profiles
   ('.profraw' files).
-  Builds a grcov HTML and cobertura XML coverage reports from the located profiles.
+  Builds grcov HTML and cobertura XML coverage reports from the located profiles.
   Uploads the built reports as workflow artifacts.
 inputs:
   retention-days:
     description: >
-      Duration after which the uploaded artifact will expire in days, or 0 to use the default setting for the 
+      Duration after which the uploaded artifacts will expire in days, or 0 to use the default setting for the 
       repository.
     required: false
     default: "0"
-  artifact-name:
-    description: "Name of the artifact to be uploaded"
+  artifact-prefix:
+    description: "Prefix of the name for the artifacts to be uploaded"
     required: false
-    default: "coverage_reports"
+    default: "coverage_report"
 
 runs:
   using: "composite"
@@ -42,10 +42,25 @@ runs:
             --ignore "/*" \
             --ignore-not-existing \
             -o ./target/coverage/
-    - name: Upload coverage reports
+    - name: Upload HTML coverage report
       uses: actions/upload-artifact@v4
       id: upload-artifact
       with:
-        name: ${{ inputs.artifact-name }}
-        path: target/coverage/
+        name: ${{ inputs.artifact-prefix }}_html
+        path: target/coverage/html
+        retention-days: ${{ inputs.retention-days }}
+    - name: Create directory for cobertura report
+      shell: bash
+      run: |
+        mkdir -p target/coverage/cobertura
+        mv target/coverage/cobertura.xml target/coverage/cobertura/
+        echo $REPORT_LOCATION > target/coverage/cobertura/report_location.txt
+      with:
+        REPORT_LOCATION: ${{ steps.upload-artifact.outputs.artifact-url }}
+    - name: Upload cobertura coverage report
+      uses: actions/upload-artifact@v4
+      id: upload-artifact
+      with:
+        name: ${{ inputs.artifact-prefix }}_cobertura
+        path: target/coverage/cobertura
         retention-days: ${{ inputs.retention-days }}
