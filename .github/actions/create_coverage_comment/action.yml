@@ -66,12 +66,12 @@ runs:
       shell: bash
       run: |
         gh run list \
-          --commit $BASE_SHA \
-          --status "success" \ 
-          --workflow  "Nightly Build" \
-          --limit 1 --json "databaseId" \
-          | jq --raw-output '.[0]["databaseId"]' \
-          > base_run_id.txt
+        --commit $BASE_SHA \
+        --status "success" \ 
+        --workflow  "Nightly Build" \
+        --limit 1 \
+        --json "databaseId" | jq --raw-output '.[0]["databaseId"]' \
+        > base_run_id.txt
         cat base_run_id.txt
         echo "BASE_RUN_ID=$(cat base_run_id.txt)" >> $GITHUB_ENV
       env:
