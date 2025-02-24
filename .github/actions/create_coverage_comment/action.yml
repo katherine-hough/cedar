@@ -26,13 +26,13 @@ runs:
   steps:
     - name: Download report artifacts
       uses: actions/download-artifact@v4
-      with: 
+      with:
         name: ${{ inputs.report-artifact-prefix }}_cobertura
     - name: Compute changed lines
       id: changed_lines
       uses: hestonhoffman/changed-lines@v1
       with:
-        file_filter: '.rs'
+        file_filter: ".rs"
     - name: Set up python
       uses: actions/setup-python@v5
       with:
@@ -66,12 +66,13 @@ runs:
       shell: bash
       run: |
         gh run list \
-        --commit $BASE_SHA \
-        --status "success" \ 
-        --workflow  "Nightly Build" \
-        --limit 1 \
-        --json "databaseId" | jq --raw-output '.[0]["databaseId"]' \
-        > base_run_id.txt
+          --commit $BASE_SHA \
+          --status "success" \
+          --workflow  "Nightly Build" \
+          --limit 1 \
+          --json "databaseId" \
+          | jq --raw-output '.[0]["databaseId"]' \
+          > base_run_id.txt
         cat base_run_id.txt
         echo "BASE_RUN_ID=$(cat base_run_id.txt)" >> $GITHUB_ENV
       env:
@@ -82,4 +83,4 @@ runs:
       uses: actions/github-script@v3
       with:
         script: |
-            core.setFailed('Required coverage criteria were not met.')
+          core.setFailed('Required coverage criteria were not met.')
