@@ -67,8 +67,10 @@ runs:
           | jq --raw-output '.[0]["databaseId"]' \
           > base_run_id.txt
         cat base_run_id.txt
+        echo "BASE_RUN_ID=$(cat base_run_id.txt)" >> $GITHUB_ENV
       env:
         BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        GH_TOKEN: ${{ github.token }}
     - name: Upload results
       uses: actions/upload-artifact@v4
       with:
