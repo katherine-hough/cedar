@@ -61,7 +61,7 @@ runs:
       run: |
         gh run list \
           --commit $BASE_COMMIT_ID \
-          --status success \
+          --status "success" \
           --workflow  "Nightly Build" \
           --limit 1 --json "databaseId" \
           | jq --raw-output '.[0]["databaseId"]' \
