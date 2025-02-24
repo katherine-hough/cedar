@@ -37,6 +37,26 @@ runs:
       uses: actions/setup-python@v5
       with:
         python-version: 3.13
+    - name: Find last nightly run for BASE
+      shell: bash
+      run: |
+        gh run list \
+          --commit $BASE_SHA \
+          --status "success" \
+          --workflow  "Nightly Build" \
+          --limit 1 \
+          --json "databaseId" \
+          | jq --raw-output '.[0]["databaseId"]' \
+          > base_run_id.txt
+        echo "BASE_RUN_ID=$(cat base_run_id.txt)" >> $GITHUB_ENV
+      env:
+        BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        GH_TOKEN: ${{ github.token }}
+    - name: Find coverage report for BASE
+      if: ${{ env.BASE_RUN_ID != 'null' }}
+      shell: bash
+      run: |
+        echo TODO
     - name: Create result files
       shell: bash
       run: |
@@ -62,22 +82,6 @@ runs:
         name: ${{ inputs.comment-artifact-name }}
         path: target/coverage/results/
         retention-days: 1
-    - name: Find last nightly run
-      shell: bash
-      run: |
-        gh run list \
-          --commit $BASE_SHA \
-          --status "success" \
-          --workflow  "Nightly Build" \
-          --limit 1 \
-          --json "databaseId" \
-          | jq --raw-output '.[0]["databaseId"]' \
-          > base_run_id.txt
-        cat base_run_id.txt
-        echo "BASE_RUN_ID=$(cat base_run_id.txt)" >> $GITHUB_ENV
-      env:
-        BASE_SHA: ${{ github.event.pull_request.base.sha }}
-        GH_TOKEN: ${{ github.token }}
     - name: Check status
       if: ${{ env.STATUS == 'FAILED' }}
       uses: actions/github-script@v3
