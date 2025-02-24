@@ -9,27 +9,16 @@ jobs:
   build_and_test:
     uses: ./.github/workflows/build_and_test.yml
     with:
-      report_coverage: true
-      threshold: 0.8
+      collect_coverage: true
 
-  check_coverage:
-    name: Check coverage threshold
+  process_coverage:
+    name: Create coverage PR comment and check coverage criteria
     needs: build_and_test
     runs-on: ubuntu-latest
     steps:
-      - name: Download artifacts
-        uses: actions/download-artifact@v4
-        with: 
-          name: coverage_results
-      - name: Read status
-        shell: bash
-        run: echo "STATUS=$(cat status.txt)" >> $GITHUB_ENV
-      - name: Check status
-        if: ${{ env.STATUS == 'FAILED' }}
-        uses: actions/github-script@v3
+      - uses: ./.github/actions/create_coverage_comment
         with:
-          script: |
-              core.setFailed('Coverage was below the required threshold of 0.8')
+          threshold: 0.8
 
   cargo_semver_checks:
     name: Cargo SemVer Checks

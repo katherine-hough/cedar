@@ -1,0 +1,51 @@
+name: "Create Coverage Reports"
+description: >
+  Searches the directory tree rooted at the current working directory for raw coverage profiles
+  ('.profraw' files).
+  Builds a grcov HTML and cobertura XML coverage reports from the located profiles.
+  Uploads the built reports as workflow artifacts.
+inputs:
+  retention-days:
+    description: >
+      Duration after which the uploaded artifact will expire in days, or 0 to use the default setting for the 
+      repository.
+    required: false
+    default: "0"
+  artifact-name:
+    description: "Name of the artifact to be uploaded"
+    required: false
+    default: "coverage_reports"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install LLVM tools
+      shell: bash
+      run: rustup component add llvm-tools-preview
+    - name: Install grcov
+      shell: bash
+      run: cargo install grcov
+    - name: Collect coverage profiles
+      shell: bash
+      run: zip -0 raw_cov.zip $(find . -name "*.profraw") -q
+    # Note: source-based branch coverage is not supported for Rust
+    # (see http://github.com/rust-lang/rust/issues/79649)
+    - name: Build coverage report
+      shell: bash
+      run: |
+        mkdir -p ./target/coverage
+        grcov raw_cov.zip \
+            --source-dir . \
+            --binary-path ./target/debug/ \
+            -t html,cobertura \
+            --ignore 'target/debug/*' \
+            --ignore "/*" \
+            --ignore-not-existing \
+            -o ./target/coverage/
+    - name: Upload coverage reports
+      uses: actions/upload-artifact@v4
+      id: upload-artifact
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: target/coverage/
+        retention-days: ${{ inputs.retention-days }}
