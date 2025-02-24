@@ -15,8 +15,8 @@ $$MOD_SUMMARY$$
 <details>
 <summary><b>Details</b></summary>
 
-| File | Coverage | Covered | Missed Lines|
-|:-----|---------:|:-------:|-------------|
+| File | Coverage | Covered | Status | Missed Lines |
+|:-----|---------:|:-------:|:------:|--------------|
 $$MOD_TABLE$$
 </details>
 
@@ -26,8 +26,8 @@ $$ALL_SUMMARY$$
 <details>
 <summary><b>Details</b></summary>
 
-| Package | Coverage | Covered | 
-|:--------|---------:|:-------:|
+| Package | Coverage | Covered | Status |
+|:--------|---------:|:-------:|:------:|
 $$ALL_TABLE$$
 </details>
 """
@@ -49,39 +49,17 @@ def format_lines(lines):
     return ", ".join(x)
 
 
-def set_color2(color, text):
-    return f'<span style="color:{color};">{text}</span>'
-
-
-def set_color(color, text):
-    text = text.replace('%', r'\\%')
-    return r"${\color{" + color + r"}\textsf{" + text + r"}}$"
-
-
-def format_proportion(actual, required):
-    text = f"{actual:.2%}"
-    if required == -1:
-        return text
-    if actual >= required:
-        color = "green"
-    else:
-        color = "goldenrod" if actual >= (required - 0.1) else "crimson"
-    return set_color(color, text)
-
-
 def create_summary(actual_coverage, required_coverage):
     if required_coverage == -1:
         return f"**Overall coverage:** {actual_coverage:.2%}"
     passed = actual_coverage >= required_coverage
-    color = "green" if passed else "crimson"
     symbol = ":white_check_mark:" if passed else ":x:"
-    text = "PASSED" if passed else "FAILED"
     return (
         f"**Required coverage:** {required_coverage:.2%}"
         + "\n\n"
         + f"**Actual coverage:** {actual_coverage:.2%}"
         + "\n\n"
-        + f"**Status:** {set_color(color, text)} {symbol}"
+        + f"**Status:** {"PASSED" if passed else "FAILED"} {symbol}"
     )
 
 
@@ -128,10 +106,25 @@ def was_modified(entry, changed_lines):
         file_name in changed_lines and entry["line_number"] in changed_lines[file_name]
     )
 
+
 def santize_name(name):
-    allowed = ['-', '_', os.path.sep, '/', '.']
-    return ''.join(filter(lambda c: str.isalnum(c) or c in allowed, name))
-    
+    allowed = ["-", "_", os.path.sep, "/", "."]
+    return "".join(filter(lambda c: str.isalnum(c) or c in allowed, name))
+
+
+def get_status(actual_coverage, required_coverage):
+    if required_coverage == -1:
+        return ":white_circle:"
+    elif actual_coverage >= required_coverage:
+        return ":green_circle:"
+    else:
+        return (
+            ":yellow_circle:"
+            if actual_coverage >= (required_coverage - 0.1)
+            else ":red_circle:"
+        )
+
+
 def create_table(entries, required_coverage, list_missed, group_key):
     entries = sorted(entries, key=lambda e: e[group_key])
     groups = itertools.groupby(entries, lambda e: e[group_key])
@@ -144,8 +137,9 @@ def create_table(entries, required_coverage, list_missed, group_key):
             coverage = num_covered / total_lines
             values = [
                 santize_name(name),
-                format_proportion(coverage, required_coverage),
+                f"{coverage:.2%}",
                 f"{num_covered}/{total_lines}",
+                get_status(coverage, required_coverage),
             ]
             if list_missed:
                 values.append(format_lines(missed_lines))
@@ -179,7 +173,7 @@ def process(
     changed_lines = read_json(changed_lines_file)
     template_variables = dict(REPORT_LOCATION=report_location)
     passed = set_table_vars(
-        entries, required_coverage, "ALL_", template_variables, False, 'package'
+        entries, required_coverage, "ALL_", template_variables, False, "package"
     )
     # Remove lines that were not modified
     modified_entries = list(filter(lambda e: was_modified(e, changed_lines), entries))
@@ -189,7 +183,7 @@ def process(
         "MOD_",
         template_variables,
         True,
-        'file_name'
+        "file_name",
     )
     comment = create_comment(template_variables)
     write_results(output_dir, True if required_coverage == -1 else passed, comment)
