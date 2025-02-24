@@ -400,7 +400,7 @@ fn update_entity_map(map: &mut HashMap<EntityUID, Arc<Entity>>, entity: Arc<Enti
 }
 
 #[allow(dead_code)]
-pub fn simple_function(i: u32, j: u32) -> u32 {
+fn simple_function(i: u32, j: u32) -> u32 {
     let k = if i == 0 {
         // CASE 1
         2
