@@ -170,7 +170,7 @@ def process(
     changed_lines_file,
     required_coverage,
     head_sha,
-    base_sha
+    base_sha,
     report_location,
     base_cobertura_file,
     output_dir,
