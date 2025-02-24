@@ -129,7 +129,7 @@ def was_modified(entry, changed_lines):
     )
 
 def santize_name(name):
-    allowed = ['-', '_', os.path.sep, '/']
+    allowed = ['-', '_', os.path.sep, '/', '.']
     return ''.join(filter(lambda c: str.isalnum(c) or c in allowed, name))
     
 def create_table(entries, required_coverage, list_missed, group_key):
