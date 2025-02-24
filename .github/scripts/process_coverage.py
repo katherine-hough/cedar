@@ -166,7 +166,14 @@ def set_table_vars(
 
 
 def process(
-    cobertura_file, changed_lines_file, required_coverage, report_location, output_dir
+    cobertura_file,
+    changed_lines_file,
+    required_coverage,
+    head_sha,
+    base_sha
+    report_location,
+    base_cobertura_file,
+    output_dir,
 ):
     required_coverage = float(required_coverage)
     entries = list(collect_line_coverage(cobertura_file))

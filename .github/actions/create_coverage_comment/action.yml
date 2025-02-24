@@ -57,6 +57,11 @@ runs:
       shell: bash
       run: |
         echo TODO
+        mkdir -p base_coverage
+        gh run download $BASE_RUN_ID --name $NAME --dir base_coverage
+      env:
+        NAME: ${{ inputs.report-artifact-prefix }}_cobertura
+        GH_TOKEN: ${{ github.token }}
     - name: Create result files
       shell: bash
       run: |
@@ -67,7 +72,10 @@ runs:
           cobertura.xml \
           target/coverage/results/changed_lines.json \
           $THRESHOLD \
+          $HEAD_SHA \
+          $BASE_SHA \
           $(cat report_location.txt) \
+          base_coverage/cobertura.xml \
           target/coverage/results
         echo "STATUS=$(cat target/coverage/results/status.txt)" >> $GITHUB_ENV
       env:
