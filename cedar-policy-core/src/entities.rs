@@ -403,6 +403,7 @@ fn update_entity_map(map: &mut HashMap<EntityUID, Arc<Entity>>, entity: Arc<Enti
 fn simple_function(i: u32, j: u32) -> u32 {
     let k = if i == 0 {
         // CASE 1
+        // TODO
         2
     } else {
         // CASE 2
