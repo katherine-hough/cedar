@@ -17,7 +17,6 @@ permissions: read-all
 
 jobs:
   validate:
-    id: validate
     runs-on: ubuntu-latest
     environment: release # See https://github.com/cedar-policy/cedar/settings/environments
     steps:
@@ -37,21 +36,24 @@ jobs:
           TAG_NAME: ${{ inputs.tag }}
 
   get-branch:
-    id: get_branch
     runs-on: ubuntu-latest
-    uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
-    with:
-      script: |
-        const tag = '${{ inputs.tag }}';
-        const version = tag.replace('v', '');
-        const [major, minor, _] = version.split('.');
-        const releaseBranch = `release/${major}.${minor}.x`;
-        core.setOutput('branch_name', releaseBranch);
+    outputs:
+      branch_name: ${{ steps.get_branch.outputs.branch_name }}
+    steps:
+      - name: Get branch name
+        id: get_branch
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+        with:
+          script: |
+            const tag = '${{ inputs.tag }}';
+            const version = tag.replace('v', '');
+            const [major, minor, _] = version.split('.');
+            const releaseBranch = `release/${major}.${minor}.x`;
+            core.setOutput('branch_name', releaseBranch);
 
   build-wasm-example:
     # Only run this step if validate succeeds.
-    needs: validate
-    id: build_wasm_example
+    needs: [validate, get-branch]
     uses: cedar-policy/cedar-examples/.github/workflows/build_wasm_example_reusable.yml@main
     with:
       cedar_policy_ref: refs/tags/${{ inputs.tag }}
