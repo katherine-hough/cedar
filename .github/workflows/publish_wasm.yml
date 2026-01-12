@@ -142,7 +142,7 @@ jobs:
             - name: Publish to NPM
               # Note: npm will implicitly apply the "latest" tag if the `--tag` option is not specified,
               # so for other releases we use the tag v<MAJOR>.<MINORR>-lts
-              run: npm publish --access=public --tag "$NPM_TAG"
+              run: npm publish --access=public --tag "$NPM_TAG" --dry-run
               working-directory: ./cedar-wasm/pkg/
               env:
                   NPM_TAG: ${{ needs.compute-values.outputs.npm_tag }}
