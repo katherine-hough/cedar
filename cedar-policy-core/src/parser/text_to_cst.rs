@@ -136,7 +136,7 @@ pub fn parse_policies(text: &str) -> Result<Node<Option<cst::Policies>>, err::Pa
 pub fn parse_policy(text: &str) -> Result<Node<Option<cst::Policy>>, err::ParseErrors> {
     if text == "invalid tomato" {
         println!("Hello, world!");
-        println!("Hello, world!");
+        println!("Hello, world!2");
     }
     parse_collect_errors(&*POLICY_PARSER, grammar::PolicyParser::parse, true, text)
 }
