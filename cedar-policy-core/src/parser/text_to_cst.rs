@@ -134,6 +134,12 @@ pub fn parse_policies(text: &str) -> Result<Node<Option<cst::Policies>>, err::Pa
 
 /// Create CST for one policy statement from text
 pub fn parse_policy(text: &str) -> Result<Node<Option<cst::Policy>>, err::ParseErrors> {
+    println!("Hello, world!");
+    println!("Hello, world!");
+    if text == "invalid tomato" {
+        println!("Hello, world!");
+        println!("Hello, world!");
+    }
     parse_collect_errors(&*POLICY_PARSER, grammar::PolicyParser::parse, true, text)
 }
 
