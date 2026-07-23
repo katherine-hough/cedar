@@ -19,6 +19,7 @@ Starting with version 3.2.4, changes marked with a star (*) are _language breaki
 - Added missing validation check when decoding a protobuf policy set that template-linked policy IDs do not collide with template IDs. (#2441)
 - `PolicySet::from_pst` now returns an error if a map key doesn't match the id of its corresponding template or policy, instead of silently accepting the malformed input (#2444).
 - For the experimental `tpe` feature, fixed `PartialEntities::from_json_value` to return an error given two entities with duplicate ids.
+- Fixed issue where the derived implementations of `Ord` and `PartialOrd` for `EntityUid`s did not order instances lexicographically by type, then by entity id (#2463, #2483).
 
 ### Added
 - Public syntax tree (`pst`) support for `variadic-is-in-range` feature: a variadic `isInRange` is modelled by a `pst::Expr::VariadicOp{...}` in the PST (#2380).
@@ -28,6 +29,7 @@ Starting with version 3.2.4, changes marked with a star (*) are _language breaki
 
 ### Changed
 
+- The experimental protobuf `encode` method now returns `Result<Vec<u8>, EncodeError>` instead of `Vec<u8>`. Encoding rejects expressions and schema types whose nesting depth would exceed prost's decode recursion limit, returning `EncodeError::MaxDepthExceeded`. This prevents a class of bugs where successfully encoded data could not be decoded.
 - The experimental protobuf decoding API now validates its inputs, checking structural invariants on entities, expressions, templates, policy sets, and schemas. Additionally, `Entities::decode` now computes the transitive closure instead of assuming it is already computed. These changes may result in lower performance for protobuf decoding. The previous, unvalidated behavior is available via the new `decode_unchecked` methods (e.g., `Entities::decode_unchecked`) for trusted encoded data.
 - For the experimental `tpe` feature, `TpeResponse::residual_policies` is updated to return only _non-trivial_ residuals and
   `TpeResponse::nontrivial_residual_policies` is deprecated. The previous behavior (iterating all residuals including trivial ones)
